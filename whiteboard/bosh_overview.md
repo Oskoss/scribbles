@@ -1,6 +1,6 @@
 # Simplifying Complex Systems with BOSH |
 
-## Deploying Software (The Old Way)
+### Deploying Software (The Old Way)
 - You have an awesome software product that will transform the fitness industry
 - Have to decide where to run your product -- AWS it sounds trendy!
 
@@ -19,7 +19,7 @@
   - AWS VPC / Route 53 for networking
   - AWS CLI to manage all this....just too hard.
 
-## Updating Software (The Old Way)
+### Updating Software (The Old Way)
 - Which VM/OS will be need to be updated?
 - Will all the services need to be updated or just a few?
 - How can we update without a product outage?
@@ -31,7 +31,7 @@
  __"I'm an IT operator not a app developer nor the security expert! *This is too hard!*"__
 
 ___
-## There's a better way! __BOSH__ |
+### There's a better way! __BOSH__ |
 - Explicit Resource Definition
   - Tells us what exactly is being used and in what manner
 - Reproducible
@@ -41,7 +41,7 @@ ___
 - Fast & Agile
   - Only updates what is required when it is required (Continuous Integration :+1:)
 
-## Understanding the Magic
+### Understanding the Magic
 
 #### Lets start with the core and build out
 
@@ -79,8 +79,55 @@ ___
 
 ## Going Further
 
-#### Stemcell
+#### What is BOSH made of? (Draw small boxes/lines diagram of below)
+- Single VM - Which all of BOSH runs on
+- Director - Core orchestrator of all BOSH components
+- Postgres DB - Storing information about the deployment
+- NATS - Pub/Sub messaging system to communicate to each VM for instructions and health monitoring
+- Blobstore - Storing releases and stemcells
+- CPI - Cloud Provider Interface - Layer which abstracts infrastructure differences from the rest of BOSH.
+- DNS Server - PowerDNS used to provide resolution between VMs in a deployment
+- Agent - Each VM in all deployments has a small Agent which listens for instructions from the Director and then carries them out.
+- ***TODO*** Maybe others I have forgotten?
+
+#### Step 0 - Get BOSHed
+
+- A single BOSH environment consists of the Director and the deployments that it orchestrates. To start, we need to deploy the director.
+- Determine the infrastructure that is correct for you:
+  - AWS
+  - Azure
+  - OpenStack
+  - vSphere
+  - vCloud
+  - SoftLayer
+  - GCP
+  - Local (Good for local dev/test/exploration)
+- [bosh-it](https://bosh.io/docs/using-bosh-init.html) your director -- automagically included in the cli v2.
+- Communicating with your BOSH director:
+  - To instruct BOSH to perform tasks or get the status of current deployments we utilize a [CLI](https://bosh.io/docs/bosh-cli.html).
+  - While there is an API to talk to the BOSH director, that is not recommended (ever changing).
+  - The CLI and BOSH has recently over gone a complete makeover for its release 2.0
+  - Old CLI is written in ruby, new is written in Golang, many other changes -- will cover these later.
+
+#### Step 1 - Upload Stemcell
+- Problem:
+  - Heart Bleed Bug Hits -- How to update all 15 instances on AWS maintaining service without performance hits?
+- Solution -- Stemcells!
+- Stemcells are:
+  - versioned
+  - IaaS specifc
+  - a bare minimum Operating System image with a BOSH agent
+  - offered in two flavors - Ubuntu trusty - CentOS 7.x
+  - packaged as tarballs
+- Stemcells allow:
+  - for a consistent and reproducible base OS
+  - versioning of changes to the base OS
+  - reuse of OS images across VMs of different types
+  - reuse of OS images across different IaaS
+- `$ bosh upload stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent`
 
 #### Release
 
 #### Manifest
+
+#### BOSH 1.x vs 2.0
