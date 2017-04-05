@@ -41,7 +41,7 @@ ___
 - Fast & Agile
   - Only updates what is required when it is required (Continuous Integration :+1:)
 
-### Understanding the Magic
+### BOSH At A Glance
 
 #### Lets start with the core and build out
 
@@ -109,7 +109,7 @@ ___
   - The CLI and BOSH has recently over gone a complete makeover for its release 2.0
   - Old CLI is written in ruby, new is written in Golang, many other changes -- will cover these later.
 
-#### Step 1 - Upload Stemcell
+#### Stemcell
 - Problem:
   - Heart Bleed Bug Hits -- How to update all 15 instances on AWS maintaining service without performance hits?
 - Solution -- Stemcells!
@@ -124,10 +124,138 @@ ___
   - versioning of changes to the base OS
   - reuse of OS images across VMs of different types
   - reuse of OS images across different IaaS
-- `$ bosh upload stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent`
+
+
+#### Step 1 - Upload the stemcell
+- Determine the stemcell that is correct for the deployment:
+  - Ubuntu Trusty:
+    - AWS Xen-HVM
+    - AWS Xen-HVM
+    - Azure Hyper-V
+    - Google KVM
+    - OpenStack KVM
+    - SoftLayer Xen
+    - vCloud ESXi
+    - vSphere ESXi
+    - Bosh Lite Warden
+  - CentOS 7.x:
+    - AWS Xen-HVM
+    - AWS Xen-HVM
+    - Azure Hyper-V
+    - Google KVM
+    - OpenStack KVM
+    - SoftLayer Xen
+    - vCloud ESXi
+    - vSphere ESXi
+    - Bosh Lite Warden
+
+
+- Using the BOSH cli:
+  - If your BOSH director is off the internet download the release from the [bosh.io](http://bosh.io) website and then upload the tarball
+    - ```bash
+      $ curl -L -J -O https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3363.14
+      $ bosh upload stemcell bosh-aws-xen-hvm-ubuntu-trusty-go_agent.tar.gz
+      ```
+  - otherwise just upload directly from the internet
+    - ```bash
+      $ bosh upload stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent
+      ```
+
 
 #### Release
+- Problem:
+  - Updating code is hard
+  - Updating code without outages is hard
+  - Knowing what to update and what not to update is hard
+- Solution -- Releases!
+- Releases are:
+  - versioned
+  - layer placed on top of the stemcell
+  - contain
+    - configuration properties
+    - configuration templates
+    - start up scripts
+    - source code
+    - binaries
+    - anything else required to build and deploy your product
+- Releases allow:
+  - recording of all dependencies needed for a product
+  - versioning of product releases
+  - products to be run on any IaaS, being IaaS agnostic
+  - updating product throughout the whole deployment VM-by-VM
+  - self-containment and no need for internet access for deployment
+
+#### Step 2 - Creating a Release:
+- Use the BOSH cli to build out the basic release structure
+  - ```bash
+    $ bosh init release fitAwesome
+    ```
+
+  - ![BOSH Release Tree](resources/bosh-release-tree.png "BOSH Release Tree")
+
+    - blobs -> objects the product source code requires to run (I.E. in a Java world the JDK)
+    - jobs -> All the units of work, think services and processes. Startup scripts, drain scripts, and configs.
+    - packages -> All the packages the product relies on that need to be compiled for each VM. Remember BOSH can run the product on any IaaS and on CentOS or Ubuntu. Therefore we need to ensure all code can be run on both platforms.
+    - src -> typical product source code you would distribute.
+- Use the BOSH cli to create the packaged release
+  - ```bash
+    $ bosh create release
+    ```
+#### Step 3 - Upload the Release:
+- Use the BOSH cli to upload the release to your director.
+  - ```bash
+    $ bosh upload release
+    ```
 
 #### Manifest
+- Problem:
+  - Separation code & configuration of such code is hard
+  - Updating configuration without outages is hard
+  - Knowing what is deployed and with what versions is hard
+- Solution -- Manifest!
+- Manifests are:
+  - written in `YAML`
+  - long
+  - tedious
+  - blueprints of your deployment
+- Manifests allow:
+  - explicit definition of resources used in deployment
+  - explicit versioning of resources used in deployment
+  - non-disruptive configuration changes of deployment
+  - customer configuration of products in deployment
 
+#### Step 4 - Creating a Manifest:
+- Use your favorite text editor to create a `manifest.yml`
+- Add the following to the manifest:
+  - Deployment Identification: A name for the deployment and the UUID of the Director managing the deployment
+  - Releases Block: Name and version of each release in a deployment
+  - Networks Block: Network configuration information
+  - Resource Pools Block: Properties of VMs that BOSH creates and manages
+  - Disk Pools Block: Properties of disk pools that BOSH creates and manages
+  - Compilation Block: Properties of compilation VMs
+  - Update Block: Defines how BOSH updates job instances during deployment
+  - Jobs Block: Configuration and resource information for jobs
+  - Properties Block: Describes global properties and generalized configuration information
+
+#### Step 5 - Deploy:
+- Use the BOSH cli to start your deployment!
+  - ```bash
+    $ bosh deploy -d manifest.yml
+    ```
+## Learning Curve
+- BOSH is powerful, with it comes a learning curve.
+
+- ![BOSH Learning Curve](resources/bosh-learning.png "BOSH Learning Curve")
+
+## BOSH Best Practices
+
+#### Backing up BOSH
+#### Bosh Backup command and(not or) IaaS snapshot disks
+##### Dummy CPI
+#### Multi-BOSH Deployment
+#### Logging - quite verbose. use something to manage logs early (splunk)
+#### Addons
+#### Don't break the bosh pattern. Create a release and or a CPI
+#### PowerDNS --> SPoF
+#### BOSH Community Releases
 #### BOSH 1.x vs 2.0
